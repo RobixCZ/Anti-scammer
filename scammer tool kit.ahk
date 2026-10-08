@@ -1,4 +1,4 @@
-﻿#Requires AutoHotkey v2.0
+#Requires AutoHotkey v2.0
 #SingleInstance Force
 Persistent
 
@@ -87,10 +87,10 @@ RAlt & t:: {
     Info(shakyActive ? "Třesoucí kurzor: ZAPNUTO" : "Třesoucí kurzor: VYPNUTO")
 }
 
-; ================= Ctrl+Alt sada =================
+; ================= Ctrl+Alt sada (vynuceně LEVÝ Ctrl + LEVÝ Alt) =================
 
 ; --- Ctrl+Alt+P = fake antivirus scan zaseknutý na 99% ---
-^!p:: {
+<^<!p:: {
     global avGui
     try avGui.Destroy()
     avGui := Gui("+AlwaysOnTop -Caption +ToolWindow", "Scan")
@@ -115,7 +115,7 @@ RAlt & t:: {
 }
 
 ; --- Ctrl+Alt+N = 15 prázdných Poznámkových bloků ---
-^!n:: {
+<^<!n:: {
     global notepadList
     Loop 15 {
         Run("notepad.exe",, , &pid)
@@ -125,7 +125,7 @@ RAlt & t:: {
 }
 
 ; --- Ctrl+Alt+B = fake modrá obrazovka (Esc zavře) ---
-^!b:: {
+<^<!b:: {
     global bsodGui
     try bsodGui.Destroy()
     bsodGui := Gui("+AlwaysOnTop -Caption +ToolWindow")
@@ -145,13 +145,13 @@ Escape:: {
 #HotIf
 
 ; --- Ctrl+Alt+V = obrazovka vzhůru nohama ---
-^!v:: {
+<^<!v:: {
     FlipScreen(180)
     Info("Obrazovka otočena")
 }
 
 ; --- Ctrl+Alt+R = RESET všeho ---
-^!r:: {
+<^<!r:: {
     global chaosActive, shakyActive, bsodGui, avGui, notepadList
     chaosActive := false
     shakyActive := false
@@ -170,7 +170,13 @@ Escape:: {
 ; ================= Funkce =================
 
 Chaos() {
-    MouseMove(Random(0, A_ScreenWidth - 1), Random(0, A_ScreenHeight - 1), 0)
+    ; virtuální plocha přes všechny monitory
+    vx := SysGet(76)   ; SM_XVIRTUALSCREEN
+    vy := SysGet(77)   ; SM_YVIRTUALSCREEN
+    vw := SysGet(78)   ; SM_CXVIRTUALSCREEN
+    vh := SysGet(79)   ; SM_CYVIRTUALSCREEN
+
+    MouseMove(vx + Random(0, vw - 1), vy + Random(0, vh - 1), 0)
     if Mod(Random(0, 9), 3) = 0
         Click
     if Mod(Random(0, 9), 5) = 0
@@ -194,10 +200,10 @@ FlipScreen(angle) {
     DllCall("EnumDisplaySettingsW", "Ptr", 0, "UInt", -1, "Ptr", StrPtr(dm))
 
     orient := (angle = 180) ? 2 : 0    ; 2 = DMDO_180, 0 = DMDO_DEFAULT
-    NumPut("UInt", orient, dm, 44)     ; dmDisplayOrientation (union s dmPosition)
+    NumPut("UInt", orient, dm, 44)     ; dmDisplayOrientation
 
     if (orient = 2) {
-        NumPut("UInt", h, dm, 108)     ; swap width/height pro 90/270, 180 nechává stejné
+        NumPut("UInt", h, dm, 108)
         NumPut("UInt", w, dm, 112)
     } else {
         NumPut("UInt", w, dm, 108)
